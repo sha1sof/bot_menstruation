@@ -3,8 +3,17 @@ package telegram
 const (
 	unknownCommand = "Я не знаю такой команды!"
 	startMessage   = "Добро пожаловать!\n" +
-		"/start"
-	helpMessage = "/help"
+		"Введите пожалйста свой пол"
+	helpMessage   = "Чтоб перезапустить бота пропишите /start или нажмете на команду"
+	unknownGender = "Попробуйте ввести заного, я не понял вашего пола"
+	stepManNik    = "Отлично\nТеперь введи ник твоей девушки"
+
+	stepWomanData       = "Введи дату начала последних месячных"
+	stepWomanCorrection = "Отлично! Я запомнил!\nВведи среднию продолжительность месечных"
+	stepWomanNik        = "Отлично\nТеперь введи ник твоего парня"
+
+	stepManConfirmation   = "Ожидайте пока ваша девушка подтвуредить, что вы её парень"
+	stepWomanConfirmation = "Ожидайте пока ваш парень подтвуредить, что вы его девушка"
 
 	start = "start"
 	help  = "help"

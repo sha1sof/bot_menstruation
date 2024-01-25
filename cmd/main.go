@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/sha1sof/bot_tg_menstruation.git/config"
-	"github.com/sha1sof/bot_tg_menstruation.git/pkg/telegram"
-	"github.com/sha1sof/bot_tg_menstruation.git/pkg/telegram/db"
+	"github.com/sha1sof/bot_menstruation.git/config"
+	"github.com/sha1sof/bot_menstruation.git/pkg/telegram"
+	"github.com/sha1sof/bot_menstruation.git/pkg/telegram/db"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
@@ -29,6 +29,7 @@ func main() {
 	}
 
 	telegramBot := telegram.NewBot(bot)
+
 	if err := telegramBot.Start(); err != nil {
 		log.Fatal(err)
 	}

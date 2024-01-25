@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/sha1sof/bot_tg_menstruation.git/config"
+	"github.com/sha1sof/bot_menstruation.git/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

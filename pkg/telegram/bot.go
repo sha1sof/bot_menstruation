@@ -7,12 +7,14 @@ import (
 )
 
 type Bot struct {
-	bot *tgbotapi.BotAPI
+	bot         *tgbotapi.BotAPI
+	currentStep map[int]*StepData
 }
 
 func NewBot(bot *tgbotapi.BotAPI) *Bot {
 	return &Bot{
-		bot: bot,
+		bot:         bot,
+		currentStep: make(map[int]*StepData),
 	}
 }
 

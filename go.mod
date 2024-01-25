@@ -1,4 +1,4 @@
-module github.com/sha1sof/bot_tg_menstruation.git
+module github.com/sha1sof/bot_menstruation.git
 
 go 1.21
 
