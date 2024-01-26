@@ -3,10 +3,10 @@ package model
 import "time"
 
 type Man struct {
-	ID       uint `gorm:"primaryKey;autoIncrement"`
-	ChatID   uint
-	UserName string
-	Partner  uint
+	ID             uint   `gorm:"primaryKey;autoIncrement"`
+	ChatID         uint   `gorm:"uniqueIndex"`
+	UserName       string `gorm:"uniqueIndex"`
+	PartnerManName string
 }
 
 type Couple struct {
@@ -16,9 +16,10 @@ type Couple struct {
 }
 
 type Woman struct {
-	ID                uint `gorm:"primaryKey;autoIncrement"`
-	ChatID            uint
-	UserName          string
+	ID                uint   `gorm:"primaryKey;autoIncrement"`
+	ChatID            uint   `gorm:"uniqueIndex"`
+	UserName          string `gorm:"uniqueIndex"`
+	PartnerWomanName  string
 	StartMenstruation time.Time
-	Partner           uint
+	AverageDuration   string
 }

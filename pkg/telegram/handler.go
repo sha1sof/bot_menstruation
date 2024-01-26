@@ -1,14 +1,21 @@
 package telegram
 
 import (
+	"fmt"
 	"log"
+	"strings"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/sha1sof/bot_menstruation.git/pkg/telegram/db"
 )
 
 type StepData struct {
 	Step int
 }
+
+var partnerMan, partnerWoman, averageDuration string
+var startMenstruation time.Time
 
 const (
 	StepStart = iota + 1
@@ -75,30 +82,52 @@ func (b *Bot) handleStepAskGender(message *tgbotapi.Message) {
 }
 
 func (b *Bot) handleStepNikMan(message *tgbotapi.Message) {
-	//example := message.Text
-	//example = strings.ReplaceAll(example, "@", "")
+	partnerMan = strings.ReplaceAll(message.Text, "@", "")
+
+	err := db.AddMan(uint(message.Chat.ID), message.From.UserName, partnerMan)
+	if err != nil {
+		log.Print("Error: ", err)
+		return
+	}
+
 	msg := tgbotapi.NewMessage(message.Chat.ID, stepManConfirmation)
 	b.bot.Send(msg)
 	b.currentStep[int(message.From.ID)] = &StepData{Step: StepManConfirmation}
 }
 
 func (b *Bot) handleStepWomanData(message *tgbotapi.Message) {
-	//data:=message.Text
+	var err error
+	startMenstruation, err = time.Parse("02.01.2006", message.Text)
+
+	if err != nil {
+		msg := tgbotapi.NewMessage(message.Chat.ID, "Ошибка формата даты\nПопробуйсте снова!")
+		b.bot.Send(msg)
+		return
+	}
+
+	fmt.Println("Parsed startMenstruation:", startMenstruation)
+
 	msg := tgbotapi.NewMessage(message.Chat.ID, stepWomanCorrection)
 	b.bot.Send(msg)
 	b.currentStep[int(message.From.ID)] = &StepData{Step: StepWomanCorrection}
 }
-
 func (b *Bot) handleStepWomanCorrection(message *tgbotapi.Message) {
-	//day:=message.Text
+	averageDuration = message.Text
+
 	msg := tgbotapi.NewMessage(message.Chat.ID, stepWomanNik)
 	b.bot.Send(msg)
 	b.currentStep[int(message.From.ID)] = &StepData{Step: StepWomanNik}
 }
 
 func (b *Bot) handleStepWomanNik(message *tgbotapi.Message) {
-	//example := message.Text
-	//example = strings.ReplaceAll(example, "@", "")
+	partnerWoman = strings.ReplaceAll(message.Text, "@", "")
+
+	err := db.AddWoman(uint(message.Chat.ID), message.From.UserName, partnerWoman, averageDuration, startMenstruation)
+	if err != nil {
+		log.Print("Error: ", err)
+		return
+	}
+
 	msg := tgbotapi.NewMessage(message.Chat.ID, stepWomanConfirmation)
 	b.bot.Send(msg)
 	b.currentStep[int(message.From.ID)] = &StepData{Step: StepWomanConfirmation}
