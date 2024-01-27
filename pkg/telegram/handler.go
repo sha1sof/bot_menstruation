@@ -89,7 +89,6 @@ func (b *Bot) handleStepNikMan(message *tgbotapi.Message) {
 		log.Print("Error: ", err)
 		return
 	}
-
 	msg := tgbotapi.NewMessage(message.Chat.ID, stepManConfirmation)
 	b.bot.Send(msg)
 	b.currentStep[int(message.From.ID)] = &StepData{Step: StepManConfirmation}

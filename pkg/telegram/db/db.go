@@ -38,19 +38,28 @@ func InitDB() {
 }
 
 func AddMan(chatID uint, userName, partnerName string) error {
+	existingMan := model.Man{}
+	if dbInstance == nil {
+		log.Println("Error: dbInstance is not initialized.")
+		return errors.New("dbInstance is not initialized")
+	}
+
+	if err := dbInstance.Where("user_name = ?", userName).First(&existingMan).Error; err == nil {
+		existingMan.PartnerManName = partnerName
+		if err := dbInstance.Save(&existingMan).Error; err != nil {
+			log.Printf("Error: when updating information about a man: %v\n", err)
+			return err
+		}
+		return nil
+	}
+
 	newMan := model.Man{
 		ChatID:         chatID,
 		UserName:       userName,
 		PartnerManName: partnerName,
 	}
 
-	if dbInstance == nil {
-		log.Println("Error: dbInstance is not initialized.")
-		return errors.New("dbInstance is not initialized")
-	}
-
-	err := dbInstance.Create(&newMan).Error
-	if err != nil {
+	if err := dbInstance.Create(&newMan).Error; err != nil {
 		log.Printf("Error: when creating a record about a man: %v\n", err)
 		return err
 	}
@@ -59,6 +68,23 @@ func AddMan(chatID uint, userName, partnerName string) error {
 }
 
 func AddWoman(chatID uint, userName, partnerWoman, averageDuration string, startMenstruation time.Time) error {
+	existingWoman := model.Woman{}
+	if dbInstance == nil {
+		log.Println("Error: dbInstance is not initialized.")
+		return errors.New("dbInstance is not initialized")
+	}
+
+	if err := dbInstance.Where("user_name = ?", userName).First(&existingWoman).Error; err == nil {
+		existingWoman.PartnerWomanName = partnerWoman
+		existingWoman.StartMenstruation = startMenstruation
+
+		if err := dbInstance.Save(&existingWoman).Error; err != nil {
+			log.Printf("Error: when updating information about a woman: %v\n", err)
+			return err
+		}
+		return nil
+	}
+
 	newWoman := model.Woman{
 		ChatID:            chatID,
 		UserName:          userName,
@@ -66,13 +92,7 @@ func AddWoman(chatID uint, userName, partnerWoman, averageDuration string, start
 		StartMenstruation: startMenstruation,
 	}
 
-	if dbInstance == nil {
-		log.Println("Error: dbInstance is not initialized.")
-		return errors.New("dbInstance is not initialized")
-	}
-
-	err := dbInstance.Create(&newWoman).Error
-	if err != nil {
+	if err := dbInstance.Create(&newWoman).Error; err != nil {
 		log.Printf("Error: when creating a record about a woman: %v\n", err)
 		return err
 	}
