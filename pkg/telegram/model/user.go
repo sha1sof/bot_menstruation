@@ -7,12 +7,7 @@ type Man struct {
 	ChatID         uint   `gorm:"uniqueIndex"`
 	UserName       string `gorm:"uniqueIndex"`
 	PartnerManName string
-}
-
-type Couple struct {
-	ID    uint `gorm:"primaryKey;autoIncrement"`
-	Man   uint
-	Woman uint
+	PartnerManID   uint
 }
 
 type Woman struct {
@@ -20,6 +15,7 @@ type Woman struct {
 	ChatID            uint   `gorm:"uniqueIndex"`
 	UserName          string `gorm:"uniqueIndex"`
 	PartnerWomanName  string
+	PartnerWomanID    uint
 	StartMenstruation time.Time
-	AverageDuration   string
+	AverageDuration   uint
 }

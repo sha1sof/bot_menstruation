@@ -33,8 +33,6 @@ func InitDB() {
 	if err := Migrate(dbInstance); err != nil {
 		log.Fatal("Error applying migrations:", err)
 	}
-
-	log.Println("Database migrations applied successfully")
 }
 
 func AddMan(chatID uint, userName, partnerName string) error {
@@ -67,7 +65,7 @@ func AddMan(chatID uint, userName, partnerName string) error {
 	return nil
 }
 
-func AddWoman(chatID uint, userName, partnerWoman, averageDuration string, startMenstruation time.Time) error {
+func AddWoman(chatID uint, userName, partnerWoman string, averageDuration uint, startMenstruation time.Time) error {
 	existingWoman := model.Woman{}
 	if dbInstance == nil {
 		log.Println("Error: dbInstance is not initialized.")

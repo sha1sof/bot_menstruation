@@ -3,6 +3,7 @@ package telegram
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,30 +15,27 @@ type StepData struct {
 	Step int
 }
 
-var partnerMan, partnerWoman, averageDuration string
+var partnerMan, partnerWoman string
+var averageDuration uint
 var startMenstruation time.Time
 
-const (
-	StepStart = iota + 1
-	StepManNik
-	StepManConfirmation
-	StepManWait
-
-	StepWomanData
-	StepWomanCorrection
-	StepWomanNik
-	StepWomanConfirmation
+var startMenu = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("Мужчина"),
+		tgbotapi.NewKeyboardButton("Женщина"),
+	),
 )
 
 func (b Bot) updateCommand(message *tgbotapi.Message) {
 	log.Printf("[%s]:- Command: %s", message.From.UserName, message.Text)
 
 	switch message.Command() {
-	case start:
+	case startCommand:
 		b.currentStep[int(message.From.ID)] = &StepData{Step: StepStart}
 		msg := tgbotapi.NewMessage(message.Chat.ID, startMessage)
+		msg.ReplyMarkup = startMenu
 		b.bot.Send(msg)
-	case help:
+	case helpCommand:
 		msg := tgbotapi.NewMessage(message.Chat.ID, helpMessage)
 		b.bot.Send(msg)
 	default:
@@ -54,26 +52,31 @@ func (b Bot) updateMessage(message *tgbotapi.Message) {
 	switch {
 	case exists && stepData.Step == StepStart:
 		b.handleStepAskGender(message)
+
 	case exists && stepData.Step == StepManNik:
 		b.handleStepNikMan(message)
+
 	case exists && stepData.Step == StepWomanData:
 		b.handleStepWomanData(message)
+
 	case exists && stepData.Step == StepWomanCorrection:
 		b.handleStepWomanCorrection(message)
+
 	case exists && stepData.Step == StepWomanNik:
 		b.handleStepWomanNik(message)
 	}
-
 }
 
 func (b *Bot) handleStepAskGender(message *tgbotapi.Message) {
-	if message.Text == "Мужчина" || message.Text == "мужчина" || message.Text == "М" || message.Text == "м" {
+	if message.Text == "Мужчина" || message.Text == "мужчина" {
 		b.currentStep[int(message.From.ID)] = &StepData{Step: StepManNik}
 		msg := tgbotapi.NewMessage(message.Chat.ID, stepManNik)
+		msg.ReplyMarkup = tgbotapi.ReplyKeyboardRemove{RemoveKeyboard: true}
 		b.bot.Send(msg)
-	} else if message.Text == "Женщина" || message.Text == "женщина" || message.Text == "Ж" || message.Text == "ж" {
+	} else if message.Text == "Женщина" || message.Text == "женщина" {
 		b.currentStep[int(message.From.ID)] = &StepData{Step: StepWomanData}
 		msg := tgbotapi.NewMessage(message.Chat.ID, stepWomanData)
+		msg.ReplyMarkup = tgbotapi.ReplyKeyboardRemove{RemoveKeyboard: true}
 		b.bot.Send(msg)
 	} else {
 		msg := tgbotapi.NewMessage(message.Chat.ID, unknownGender)
@@ -82,7 +85,12 @@ func (b *Bot) handleStepAskGender(message *tgbotapi.Message) {
 }
 
 func (b *Bot) handleStepNikMan(message *tgbotapi.Message) {
-	partnerMan = strings.ReplaceAll(message.Text, "@", "")
+	partnerMan, er := checkPartnerInvalid(message.Text)
+	if er == false {
+		msg := tgbotapi.NewMessage(message.Chat.ID, unknownNik)
+		b.bot.Send(msg)
+		return
+	}
 
 	err := db.AddMan(uint(message.Chat.ID), message.From.UserName, partnerMan)
 	if err != nil {
@@ -111,15 +119,26 @@ func (b *Bot) handleStepWomanData(message *tgbotapi.Message) {
 	b.currentStep[int(message.From.ID)] = &StepData{Step: StepWomanCorrection}
 }
 func (b *Bot) handleStepWomanCorrection(message *tgbotapi.Message) {
-	averageDuration = message.Text
+	text, err := strconv.Atoi(message.Text)
+	if err != nil {
+		msg := tgbotapi.NewMessage(message.Chat.ID, "Попробуйте ввести снова\nТолько число дней")
+		b.bot.Send(msg)
+		log.Print("Error: Convert to uint: ", err)
+	}
 
+	averageDuration = uint(text)
 	msg := tgbotapi.NewMessage(message.Chat.ID, stepWomanNik)
 	b.bot.Send(msg)
 	b.currentStep[int(message.From.ID)] = &StepData{Step: StepWomanNik}
 }
 
 func (b *Bot) handleStepWomanNik(message *tgbotapi.Message) {
-	partnerWoman = strings.ReplaceAll(message.Text, "@", "")
+	partnerWoman, er := checkPartnerInvalid(message.Text)
+	if er == false {
+		msg := tgbotapi.NewMessage(message.Chat.ID, unknownNik)
+		b.bot.Send(msg)
+		return
+	}
 
 	err := db.AddWoman(uint(message.Chat.ID), message.From.UserName, partnerWoman, averageDuration, startMenstruation)
 	if err != nil {
@@ -130,4 +149,24 @@ func (b *Bot) handleStepWomanNik(message *tgbotapi.Message) {
 	msg := tgbotapi.NewMessage(message.Chat.ID, stepWomanConfirmation)
 	b.bot.Send(msg)
 	b.currentStep[int(message.From.ID)] = &StepData{Step: StepWomanConfirmation}
+}
+
+func checkPartnerInvalid(userName string) (string, bool) {
+	userName = strings.ReplaceAll(userName, "@", "")
+
+	for _, r := range userName {
+		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') && (r != '_') {
+			return "", false
+		}
+	}
+	return userName, true
+}
+
+func (b *Bot) subscriptionForMe(userName *tgbotapi.Message) (string, bool) {
+	err := db.subscriptionIsTrue(userName)
+	if err != nil {
+		log.Print("No partner: ", err)
+		return "", false
+	}
+
 }

@@ -10,7 +10,7 @@ import (
 func Migrate(db *gorm.DB) error {
 	log.Println("Starting database migration...")
 
-	err := db.AutoMigrate(&model.Man{}, &model.Woman{}, &model.Couple{})
+	err := db.AutoMigrate(&model.Man{}, &model.Woman{})
 	if err != nil {
 		log.Printf("Error during migration: %v\n", err)
 		return err
