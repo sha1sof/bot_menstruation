@@ -85,18 +85,24 @@ func (b *Bot) handleStepAskGender(message *tgbotapi.Message) {
 }
 
 func (b *Bot) handleStepNikMan(message *tgbotapi.Message) {
-	partnerMan, er := checkPartnerInvalid(message.Text)
-	if er == false {
+	partnerMan, isValid := checkPartnerInvalid(message.Text)
+	if !isValid {
 		msg := tgbotapi.NewMessage(message.Chat.ID, unknownNik)
 		b.bot.Send(msg)
 		return
 	}
 
-	err := db.AddMan(uint(message.Chat.ID), message.From.UserName, partnerMan)
+	bo, err := db.AddMan(uint(message.Chat.ID), message.From.UserName, partnerMan)
 	if err != nil {
 		log.Print("Error: ", err)
 		return
 	}
+	if bo {
+		msg := tgbotapi.NewMessage(message.Chat.ID, "Ваша девушка уже есть в базе данных")
+		b.bot.Send(msg)
+		b.currentStep[int(message.From.ID)] = &StepData{Step: StepManConfirmation}
+	}
+
 	msg := tgbotapi.NewMessage(message.Chat.ID, stepManConfirmation)
 	b.bot.Send(msg)
 	b.currentStep[int(message.From.ID)] = &StepData{Step: StepManConfirmation}
@@ -133,17 +139,21 @@ func (b *Bot) handleStepWomanCorrection(message *tgbotapi.Message) {
 }
 
 func (b *Bot) handleStepWomanNik(message *tgbotapi.Message) {
-	partnerWoman, er := checkPartnerInvalid(message.Text)
-	if er == false {
+	partnerWoman, isValid := checkPartnerInvalid(message.Text)
+	if !isValid {
 		msg := tgbotapi.NewMessage(message.Chat.ID, unknownNik)
 		b.bot.Send(msg)
 		return
 	}
-
-	err := db.AddWoman(uint(message.Chat.ID), message.From.UserName, partnerWoman, averageDuration, startMenstruation)
+	bo, err := db.AddWoman(uint(message.Chat.ID), message.From.UserName, partnerWoman, averageDuration, startMenstruation)
 	if err != nil {
 		log.Print("Error: ", err)
 		return
+	}
+	if bo {
+		msg := tgbotapi.NewMessage(message.Chat.ID, "Ваша парень уже есть в базе данных")
+		b.bot.Send(msg)
+		b.currentStep[int(message.From.ID)] = &StepData{Step: StepManConfirmation}
 	}
 
 	msg := tgbotapi.NewMessage(message.Chat.ID, stepWomanConfirmation)
@@ -155,18 +165,9 @@ func checkPartnerInvalid(userName string) (string, bool) {
 	userName = strings.ReplaceAll(userName, "@", "")
 
 	for _, r := range userName {
-		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') && (r != '_') {
+		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') && (r != '_' && r != '@') {
 			return "", false
 		}
 	}
 	return userName, true
-}
-
-func (b *Bot) subscriptionForMe(userName *tgbotapi.Message) (string, bool) {
-	err := db.subscriptionIsTrue(userName)
-	if err != nil {
-		log.Print("No partner: ", err)
-		return "", false
-	}
-
 }
